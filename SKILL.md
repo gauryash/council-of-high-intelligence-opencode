@@ -194,7 +194,7 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 
 **Auto-routing algorithm** (apply in order):
 1. **Polarity pair separation** (hard constraint): For any polarity pair where both members are on the panel, assign them to different providers. Check the `council.polarity_pairs` field in each member's frontmatter.
-2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members. NIM (`nvidia_nim`) is treated as a single "provider" for spread purposes even though it serves multiple model families — the within-NIM diversity is captured by `models[]`.
+2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members. Aggregators — NIM (`nvidia_nim`) and Cursor (`cursor_cli`) — are each treated as a single "provider" for spread purposes even though they serve multiple model families; the within-aggregator diversity is captured by `models[]`. Because Cursor can serve `claude-*` models, do not place a Cursor seat using a `claude-*` model opposite a native `anthropic` seat in a polarity pair (rule 1) — pick a cross-family Cursor model (`gpt-*`, `gemini-*`, `grok-*`) for that seat instead.
 3. **Provider affinity** (soft tiebreaker): Use the `council.provider_affinity` field in each member's frontmatter. When choosing which provider to assign a member to, prefer providers listed earlier in their affinity array. Members whose affinity does not list `nvidia_nim` should be assigned NIM only when no other provider has capacity.
 4. **Tier matching** (soft): Members with `model: opus` in frontmatter get high-tier models per `configs/auto-route-defaults.yaml` `provider_models.<provider>.high`. Members with `model: sonnet` get `.mid`. For NIM, `high` is the largest available reasoning model (default `deepseek-ai/deepseek-v4-pro`); `mid` is a smaller/faster variant.
 5. **OpenAI-compatible seat hydration**: For every seat assigned to a provider with `exec_method: openai_compatible_api`, the coordinator reads `base_url` and `api_key_env` from the detection JSON entry (NIM defaults to `https://integrate.api.nvidia.com/v1` and `NVIDIA_API_KEY`). The resolved API key is held in coordinator state only — never written to logs or transcripts.
@@ -232,7 +232,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 
 **Selection algorithm** (apply in order — first match wins):
 
-1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-2.5-pro`).
+1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-2.5-pro`).
 2. **Config override**: If `configs/auto-route-defaults.yaml` has a non-null `chairman:` block, use it.
 3. **Auto-select** (default): Pick the highest-tier model among detected providers, **preferring a provider not already on the panel** when possible. Tie-breaker: provider listed first in the detected-providers JSON.
 4. **Single-provider fallback**: If only one provider is detected (Claude-only), use that provider's highest tier (`opus` by default). Note in the verdict that the Chairman shares a provider with one or more panel members.
@@ -246,6 +246,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 | google | `gemini-2.5-pro` |
 | ollama | first available local model |
 | nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
+| cursor_cli | `gpt-5.4-high` |
 
 **Constraints:**
 - Chairman is NOT a deliberating member in the same session (hard constraint — a panel member's prior outputs are exactly what the Chairman is auditing).
@@ -291,6 +292,18 @@ gemini -m {model} -p "{full prompt}" 2>/dev/null
 ollama run {model} "{full prompt}" 2>/dev/null
 ```
 3. Capture stdout. Timeout: 120 seconds (local models are slower).
+
+**For `cursor_cli` (Cursor)** — run via Bash tool:
+1. Read and extract identity sections (same as codex_exec above).
+2. Authentication is resolved by the Cursor CLI itself (prior `cursor-agent login` or `CURSOR_API_KEY` env var) — never inline a key. If the call returns an auth error, apply the Fallback rule.
+3. Run in headless print mode, read-only (`--mode ask` keeps the member from touching the filesystem — council members only reason):
+```bash
+cursor-agent -p --mode ask --model {model} --output-format text "{full prompt}" 2>/dev/null
+```
+4. Capture stdout as the member's output. Timeout: 90 seconds.
+5. If stdout is empty or the command exits non-zero, treat as a failed call and apply the Fallback rule.
+
+Cursor is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families. For provider-spread purposes it counts as a single provider, but a seat routed to Cursor's `claude-*` model shares Anthropic's training bias with native `anthropic` seats. Prefer cross-family Cursor models (e.g. `gpt-5.4-high`, `gemini-2.5-pro`, `grok-4`) when Cursor is filling a diversity seat. Verify live model IDs with `cursor-agent --list-models`.
 
 **For `openai_compatible_api` (NVIDIA NIM, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
 1. Read and extract identity sections (same as codex_exec above).
@@ -433,7 +446,7 @@ No new arguments — only crystallization of your stance.
 
 ### STEP 7: Synthesize Verdict (CHAIRMAN)
 
-Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / gemini_cli / ollama_run / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
+Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / gemini_cli / ollama_run / cursor_cli / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
 
 **Chairman prompt template:**
 ```

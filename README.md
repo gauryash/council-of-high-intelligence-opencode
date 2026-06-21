@@ -209,8 +209,11 @@ The council automatically detects installed LLM providers and distributes member
 | Google | `gemini` | `gemini -p` |
 | Ollama (local) | `ollama` | `ollama run` |
 | NVIDIA NIM | `NVIDIA_API_KEY` env | `openai_compatible_api` |
+| Cursor | `cursor-agent` | `cursor-agent -p` |
 
 NVIDIA NIM ([build.nvidia.com](https://build.nvidia.com)) exposes 130+ open-weight models (DeepSeek, Kimi, MiniMax, GLM, Qwen, Nemotron) via an OpenAI-compatible endpoint. Free tier: 1,000 credits, 40 RPM. Detection requires only `export NVIDIA_API_KEY=nvapi-...` — no CLI binary needed. See `configs/provider-model-slots.nim.example.yaml` for a sample seat allocation.
+
+Cursor CLI ([cursor.com/cli](https://cursor.com/cli)) is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families through a single `CURSOR_API_KEY` (or `cursor-agent login`). Members route via headless read-only mode (`cursor-agent -p --mode ask --model <id>`). Install with `curl https://cursor.com/install -fsS | bash`. Because Cursor can serve `claude-*` models, pick **cross-family** Cursor models (e.g. `gpt-5.4-high`, `gemini-2.5-pro`, `grok-4`) when a seat needs to add diversity rather than duplicate Anthropic bias. List live IDs with `cursor-agent --list-models`. See `configs/provider-model-slots.cursor.example.yaml` for a sample seat allocation.
 
 **How routing works:**
 1. Polarity pairs are separated across providers (hard constraint)
@@ -282,6 +285,7 @@ Restart your target client(s) after installing. Run `./scripts/council-simulatio
 - [Codex CLI](https://github.com/openai/codex) (OpenAI) — `npm i -g @openai/codex`
 - [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) — see [gemini-cli repo](https://github.com/google-gemini/gemini-cli)
 - [Ollama](https://ollama.com) (local models) — install from ollama.com
+- [Cursor CLI](https://cursor.com/cli) (GPT/Claude/Gemini/Grok aggregator) — `curl https://cursor.com/install -fsS | bash`
 
 ## Contributing
 

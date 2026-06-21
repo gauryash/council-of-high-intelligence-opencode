@@ -136,16 +136,24 @@ Wait with `spawn_timeout_ms`. If a seat fails or times out:
 
 If live seats drop below `hard_min_live_seats`, switch to fully simulated mode for all seats and state this explicitly.
 
-### Step 3.5: OpenAI-Compatible Seats (NIM and future)
+### Step 3.5: External Seats (HTTP and CLI archetypes)
 
-For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future), dispatch via HTTP rather than the host runtime's `spawn_agent`:
+Some provider archetypes are dispatched outside the host runtime's `spawn_agent`. Anonymization (Step 4) and Chairman selection (Step 5) apply equally to these seats — no special-case logic.
+
+**`openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future)** — dispatch via HTTP:
 
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.
 - POST to `{base_url}/chat/completions` with an OpenAI-compatible payload (system+user messages, `temperature: 0.7`, `max_tokens: 1200`).
 - Extract `.choices[0].message.content`. If empty or non-2xx, mark the seat `degraded` and apply the standard fallback (anthropic per the agent's `model` frontmatter).
 - Per-seat timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
-- The Round 2 anonymization protocol (Step 4) and Chairman selection (Step 5) apply equally to NIM seats — no special-case logic.
+
+**`cursor_cli` (Cursor)** — dispatch via subprocess. Cursor is a model aggregator: one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families.
+
+- Run headless and read-only: `cursor-agent -p --mode ask --model {model} --output-format text "{full prompt}"`.
+- Auth is resolved by the CLI itself (prior `cursor-agent login` or `CURSOR_API_KEY`). Never inline a key. On auth error, mark the seat `degraded` and apply the standard fallback.
+- Empty stdout or non-zero exit → `degraded` + fallback. Per-seat timeout: 90 seconds.
+- Counts as a single provider for spread. Because Cursor can serve `claude-*` models, prefer cross-family models (`gpt-*`, `gemini-*`, `grok-*`) for any seat opposite a native `anthropic` seat in a polarity pair. Verify live IDs with `cursor-agent --list-models`.
 
 ### Step 4: Deliberation Rounds
 
@@ -189,7 +197,7 @@ Round execution reliability policy:
 
 Synthesis is performed by an explicit **Chairman** — a model that did NOT deliberate in Rounds 1–3. The Chairman is selected before Round 1 using this algorithm (first match wins):
 
-1. **Explicit override**: `--chairman <name>` was passed (provider tag or model alias).
+1. **Explicit override**: `--chairman <name>` was passed (provider tag — `anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli` — or a model alias).
 2. **Auto-select**: highest-tier model among available providers, **preferring one not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
 3. **Single-provider fallback**: use that provider's highest tier and note the overlap in the verdict.
 

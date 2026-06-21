@@ -6,6 +6,9 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Cursor CLI provider support (`cursor_cli` archetype) — sixth dispatch path alongside subagent / codex_exec / gemini_cli / ollama_run / openai_compatible_api. Auto-detected via the `cursor-agent` binary; members run headless and read-only (`cursor-agent -p --mode ask --model <id>`). Cursor is a model aggregator (GPT-5.x / Claude / Gemini / Grok through one CLI), so routing treats it as a single provider for spread and steers diversity seats to cross-family models to avoid duplicating Anthropic bias. New `configs/provider-model-slots.cursor.example.yaml`, `cursor_cli` tiers in `configs/auto-route-defaults.yaml`, and `cursor_cli` as a valid `--chairman` tag.
+
 ## [1.1.0] - 2026-05-21
 
 ### Added
