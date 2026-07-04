@@ -2,23 +2,24 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OPENCODE_DIR="${HOME}/.config/opencode"
 PI_DIR="${HOME}/.pi/agent"
+OPENCODE_DIR="${HOME}/.config/opencode"
 DRY_RUN=false
 COPY_CONFIGS=false
-INSTALL_OPENCODE=true
-INSTALL_PI=false
+INSTALL_PI=true
+INSTALL_OPENCODE=false
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--opencode-dir PATH] [--pi] [--pi-dir PATH] [--copy-configs] [--dry-run] [--help]
+Usage: ./install.sh [--pi-dir PATH] [--opencode] [--opencode-dir PATH] [--copy-configs] [--dry-run] [--help]
 
-Install Council of High Intelligence into opencode-go and/or pi skill directories.
+Install Council of High Intelligence into pi and/or opencode-go skill directories.
+Default: installs to pi only (~/.pi/agent/skills/council/).
 
 Options:
-  --opencode-dir PATH  Target opencode config directory (default: ~/.config/opencode)
-  --pi                 Also install the pi skill
   --pi-dir PATH        Target pi agent directory (default: ~/.pi/agent)
+  --opencode           Also install for opencode-go
+  --opencode-dir PATH  Target opencode config directory (default: ~/.config/opencode)
   --copy-configs       Also install repo configs/ into skill config folder
   --dry-run            Print actions without writing files
   --help               Show this help message
@@ -27,211 +28,97 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --opencode-dir)
-      if [[ $# -lt 2 ]]; then
-        echo "Error: --opencode-dir requires a path argument" >&2
-        usage
-        exit 1
-      fi
-      OPENCODE_DIR="$2"
-      shift 2
-      ;;
-    --pi)
-      INSTALL_PI=true
-      shift
-      ;;
     --pi-dir)
-      if [[ $# -lt 2 ]]; then
-        echo "Error: --pi-dir requires a path argument" >&2
-        usage
-        exit 1
-      fi
-      PI_DIR="$2"
-      shift 2
-      ;;
+      if [[ $# -lt 2 ]]; then echo "Error: --pi-dir requires a path argument" >&2; usage; exit 1; fi
+      PI_DIR="$2"; shift 2 ;;
+    --opencode)
+      INSTALL_OPENCODE=true; shift ;;
+    --opencode-dir)
+      if [[ $# -lt 2 ]]; then echo "Error: --opencode-dir requires a path argument" >&2; usage; exit 1; fi
+      OPENCODE_DIR="$2"; INSTALL_OPENCODE=true; shift 2 ;;
     --copy-configs)
-      COPY_CONFIGS=true
-      shift
-      ;;
+      COPY_CONFIGS=true; shift ;;
     --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
+      DRY_RUN=true; shift ;;
     --help|-h)
-      usage
-      exit 0
-      ;;
+      usage; exit 0 ;;
     *)
-      echo "Error: unknown argument '$1'" >&2
-      usage
-      exit 1
-      ;;
+      echo "Error: unknown argument '$1'" >&2; usage; exit 1 ;;
   esac
 done
 
 run_cmd() {
-  if [[ "$DRY_RUN" == true ]]; then
-    echo "[dry-run] $*"
-  else
-    "$@"
-  fi
+  if [[ "$DRY_RUN" == true ]]; then echo "[dry-run] $*"; else "$@"; fi
 }
 
-if [[ ! -d "${SCRIPT_DIR}/agents" ]]; then
-  echo "Error: agents directory not found at ${SCRIPT_DIR}/agents" >&2
-  exit 1
-fi
-
-if [[ ! -f "${SCRIPT_DIR}/SKILL.md" ]]; then
-  echo "Error: SKILL.md not found at ${SCRIPT_DIR}/SKILL.md" >&2
-  exit 1
-fi
+# Validations
+[[ -d "${SCRIPT_DIR}/agents" ]] || { echo "Error: agents/ directory not found" >&2; exit 1; }
+[[ -f "${SCRIPT_DIR}/SKILL.md" ]] || { echo "Error: SKILL.md not found" >&2; exit 1; }
 
 shopt -s nullglob
 agent_files=("${SCRIPT_DIR}"/agents/council-*.md)
 shopt -u nullglob
-
-if [[ ${#agent_files[@]} -eq 0 ]]; then
-  echo "Error: no council agent files found under ${SCRIPT_DIR}/agents" >&2
-  exit 1
-fi
+[[ ${#agent_files[@]} -gt 0 ]] || { echo "Error: no council agent files found" >&2; exit 1; }
 
 CONFIGS_SRC_DIR="${SCRIPT_DIR}/configs"
 SCRIPTS_SRC_DIR="${SCRIPT_DIR}/scripts"
 
 # ============================================================
-# Install for opencode-go (default)
-# ============================================================
-if [[ "${INSTALL_OPENCODE}" == true ]]; then
-  OPENCODE_SKILL_DIR="${OPENCODE_DIR}/skills/council"
-  OPENCODE_SKILL_DEST="${OPENCODE_SKILL_DIR}/SKILL.md"
-  OPENCODE_AGENTS_DEST_DIR="${OPENCODE_SKILL_DIR}/agents"
-  OPENCODE_SCRIPTS_DEST_DIR="${OPENCODE_SKILL_DIR}/scripts"
-  OPENCODE_CONFIGS_DEST_DIR="${OPENCODE_SKILL_DIR}/configs"
-
-  echo "Installing Council of High Intelligence for opencode-go..."
-  echo "  Target: ${OPENCODE_DIR}"
-
-  run_cmd mkdir -p "${OPENCODE_SKILL_DIR}" "${OPENCODE_AGENTS_DEST_DIR}" "${OPENCODE_SCRIPTS_DEST_DIR}"
-
-  echo "  Installing council skill..."
-  run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${OPENCODE_SKILL_DEST}"
-
-  echo "  Installing council agents..."
-  opencode_agents=0
-  for agent_file in "${agent_files[@]}"; do
-    run_cmd install -m 0644 "${agent_file}" "${OPENCODE_AGENTS_DEST_DIR}/"
-    ((opencode_agents+=1))
-  done
-
-  echo "  Installing council scripts..."
-  opencode_scripts=0
-  shopt -s nullglob
-  script_files=("${SCRIPTS_SRC_DIR}"/*.sh)
-  shopt -u nullglob
-  for script_file in "${script_files[@]}"; do
-    run_cmd install -m 0755 "${script_file}" "${OPENCODE_SCRIPTS_DEST_DIR}/"
-    ((opencode_scripts+=1))
-  done
-
-  opencode_configs=0
-  if [[ "$COPY_CONFIGS" == true ]]; then
-    if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
-      run_cmd mkdir -p "${OPENCODE_CONFIGS_DEST_DIR}"
-      for config_file in "${CONFIGS_SRC_DIR}"/*; do
-        if [[ -f "${config_file}" ]]; then
-          run_cmd install -m 0644 "${config_file}" "${OPENCODE_CONFIGS_DEST_DIR}/"
-          ((opencode_configs+=1))
-        fi
-      done
-    fi
-  fi
-
-  # .env.example
-  if [[ -f "${SCRIPT_DIR}/.env.example" ]]; then
-    run_cmd install -m 0644 "${SCRIPT_DIR}/.env.example" "${OPENCODE_SKILL_DIR}/.env.example"
-  fi
-
-  echo ""
-  echo "  opencode-go install complete:"
-  echo "    Skill: ${OPENCODE_SKILL_DEST}"
-  echo "    Agents: ${opencode_agents} installed"
-  echo "    Scripts: ${opencode_scripts} installed"
-  if [[ "$COPY_CONFIGS" == true ]]; then
-    echo "    Configs: ${opencode_configs} installed"
-  fi
-  echo "    .env.example installed"
-  echo "    Next: cp ${OPENCODE_SKILL_DIR}/.env.example ${OPENCODE_SKILL_DIR}/.env"
-  echo "          and set your OPENCODE_GO_API_KEY"
-fi
-
-# ============================================================
-# Install for pi (optional)
+# Install for pi (default)
 # ============================================================
 if [[ "${INSTALL_PI}" == true ]]; then
   PI_SKILL_DIR="${PI_DIR}/skills/council"
-  PI_SKILL_DEST="${PI_SKILL_DIR}/SKILL.md"
-  PI_AGENTS_DEST_DIR="${PI_SKILL_DIR}/agents"
-  PI_SCRIPTS_DEST_DIR="${PI_SKILL_DIR}/scripts"
-  PI_CONFIGS_DEST_DIR="${PI_SKILL_DIR}/configs"
+
+  echo "Installing for pi..."
+  echo "  Target: ${PI_SKILL_DIR}"
+
+  run_cmd mkdir -p "${PI_SKILL_DIR}" "${PI_SKILL_DIR}/agents" "${PI_SKILL_DIR}/scripts"
+  run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${PI_SKILL_DIR}/SKILL.md"
+
+  for f in "${agent_files[@]}"; do run_cmd install -m 0644 "$f" "${PI_SKILL_DIR}/agents/"; done
+  echo "  Agents: ${#agent_files[@]}"
+
+  for f in "${SCRIPTS_SRC_DIR}"/*.sh; do run_cmd install -m 0755 "$f" "${PI_SKILL_DIR}/scripts/"; done
+  echo "  Scripts: $(ls "${SCRIPTS_SRC_DIR}"/*.sh 2>/dev/null | wc -l)"
+
+  if [[ "$COPY_CONFIGS" == true ]] && [[ -d "${CONFIGS_SRC_DIR}" ]]; then
+    run_cmd mkdir -p "${PI_SKILL_DIR}/configs"
+    for f in "${CONFIGS_SRC_DIR}"/*; do [[ -f "$f" ]] && run_cmd install -m 0644 "$f" "${PI_SKILL_DIR}/configs/"; done
+    echo "  Configs: installed"
+  fi
+
+  [[ -f "${SCRIPT_DIR}/.env.example" ]] && run_cmd install -m 0644 "${SCRIPT_DIR}/.env.example" "${PI_SKILL_DIR}/.env.example"
+  echo "  .env.example installed"
+fi
+
+# ============================================================
+# Install for opencode-go (optional, --opencode)
+# ============================================================
+if [[ "${INSTALL_OPENCODE}" == true ]]; then
+  OPENCODE_SKILL_DIR="${OPENCODE_DIR}/skills/council"
 
   echo ""
-  echo "Installing Council of High Intelligence for pi..."
-  echo "  Target: ${PI_DIR}"
+  echo "Installing for opencode-go..."
+  echo "  Target: ${OPENCODE_SKILL_DIR}"
 
-  run_cmd mkdir -p "${PI_SKILL_DIR}" "${PI_AGENTS_DEST_DIR}" "${PI_SCRIPTS_DEST_DIR}"
+  run_cmd mkdir -p "${OPENCODE_SKILL_DIR}" "${OPENCODE_SKILL_DIR}/agents" "${OPENCODE_SKILL_DIR}/scripts"
+  run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${OPENCODE_SKILL_DIR}/SKILL.md"
 
-  echo "  Installing council skill..."
-  run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${PI_SKILL_DEST}"
+  for f in "${agent_files[@]}"; do run_cmd install -m 0644 "$f" "${OPENCODE_SKILL_DIR}/agents/"; done
+  echo "  Agents: ${#agent_files[@]}"
 
-  echo "  Installing council agents..."
-  pi_agents=0
-  for agent_file in "${agent_files[@]}"; do
-    run_cmd install -m 0644 "${agent_file}" "${PI_AGENTS_DEST_DIR}/"
-    ((pi_agents+=1))
-  done
+  for f in "${SCRIPTS_SRC_DIR}"/*.sh; do run_cmd install -m 0755 "$f" "${OPENCODE_SKILL_DIR}/scripts/"; done
+  echo "  Scripts: $(ls "${SCRIPTS_SRC_DIR}"/*.sh 2>/dev/null | wc -l)"
 
-  echo "  Installing council scripts..."
-  pi_scripts=0
-  shopt -s nullglob
-  pi_script_files=("${SCRIPTS_SRC_DIR}"/*.sh)
-  shopt -u nullglob
-  for script_file in "${pi_script_files[@]}"; do
-    run_cmd install -m 0755 "${script_file}" "${PI_SCRIPTS_DEST_DIR}/"
-    ((pi_scripts+=1))
-  done
-
-  pi_configs=0
-  if [[ "$COPY_CONFIGS" == true ]]; then
-    if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
-      run_cmd mkdir -p "${PI_CONFIGS_DEST_DIR}"
-      for config_file in "${CONFIGS_SRC_DIR}"/*; do
-        if [[ -f "${config_file}" ]]; then
-          run_cmd install -m 0644 "${config_file}" "${PI_CONFIGS_DEST_DIR}/"
-          ((pi_configs+=1))
-        fi
-      done
-    fi
+  if [[ "$COPY_CONFIGS" == true ]] && [[ -d "${CONFIGS_SRC_DIR}" ]]; then
+    run_cmd mkdir -p "${OPENCODE_SKILL_DIR}/configs"
+    for f in "${CONFIGS_SRC_DIR}"/*; do [[ -f "$f" ]] && run_cmd install -m 0644 "$f" "${OPENCODE_SKILL_DIR}/configs/"; done
+    echo "  Configs: installed"
   fi
 
-  # .env.example for pi
-  if [[ -f "${SCRIPT_DIR}/.env.example" ]]; then
-    run_cmd install -m 0644 "${SCRIPT_DIR}/.env.example" "${PI_SKILL_DIR}/.env.example"
-  fi
-
-  echo ""
-  echo "  pi install complete:"
-  echo "    Skill: ${PI_SKILL_DEST}"
-  echo "    Agents: ${pi_agents} installed"
-  echo "    Scripts: ${pi_scripts} installed"
-  if [[ "$COPY_CONFIGS" == true ]]; then
-    echo "    Configs: ${pi_configs} installed"
-  fi
-  echo "    .env.example installed"
-  echo "    Next: cp ${PI_SKILL_DIR}/.env.example ${PI_SKILL_DIR}/.env"
-  echo "          and set your OPENCODE_GO_API_KEY"
+  [[ -f "${SCRIPT_DIR}/.env.example" ]] && run_cmd install -m 0644 "${SCRIPT_DIR}/.env.example" "${OPENCODE_SKILL_DIR}/.env.example"
+  echo "  .env.example installed"
 fi
 
 echo ""
-echo "Done."
-echo "Restart your CLI client(s) and use /council to convene the council."
+echo "Done. Restart your CLI client(s) and use /council to convene the council."

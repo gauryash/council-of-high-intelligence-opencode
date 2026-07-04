@@ -169,13 +169,13 @@ fi
 ./install.sh --dry-run >/tmp/council-install-dry-run.log
 pass "install.sh --dry-run completed"
 
-grep -q "Installed .* council agents" /tmp/council-install-dry-run.log || fail "install dry-run output missing agent install summary"
+grep -q "Agents: " /tmp/council-install-dry-run.log || fail "install dry-run output missing agent install summary"
 pass "Install summary output present"
 
 ./install.sh --dry-run --copy-configs >/tmp/council-install-dry-run-configs.log
 pass "install.sh --dry-run --copy-configs completed"
 
-grep -q "Installed .* config files" /tmp/council-install-dry-run-configs.log || fail "copy-configs dry-run output missing config install summary"
+grep -q "Configs: installed" /tmp/council-install-dry-run-configs.log || fail "copy-configs dry-run output missing config install summary"
 pass "Config summary output present"
 
 echo
