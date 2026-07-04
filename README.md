@@ -9,10 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xNyk/council-of-high-intelligence/releases"><img src="https://img.shields.io/github/v/release/0xNyk/council-of-high-intelligence" alt="Release"></a>
-  <a href="https://github.com/0xNyk/council-of-high-intelligence/stargazers"><img src="https://img.shields.io/github/stars/0xNyk/council-of-high-intelligence" alt="Stars"></a>
+  <a href="https://github.com/gauryash/council-of-high-intelligence-opencode/releases"><img src="https://img.shields.io/github/v/release/gauryash/council-of-high-intelligence-opencode" alt="Release"></a>
+  <a href="https://github.com/gauryash/council-of-high-intelligence-opencode/stargazers"><img src="https://img.shields.io/github/stars/gauryash/council-of-high-intelligence-opencode" alt="Stars"></a>
   <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/badge/license-CC0-blue" alt="License"></a>
-  <img src="https://img.shields.io/badge/opencode-go-skill-purple" alt="opencode-go Skill">
+  <img src="https://img.shields.io/badge/opencode--go-skill-purple" alt="opencode-go Skill">
+  <img src="https://img.shields.io/badge/pi-skill-teal" alt="pi Skill">
   <img src="https://img.shields.io/badge/members-18-orange" alt="18 Members">
 </p>
 
@@ -27,14 +28,15 @@
 - [Requirements](#requirements)
 - [Contributing](#contributing)
 - [Support the Project](#support-the-project)
+- [Star History](#star-history)
 
 </details>
 
 ## Quickstart
 
 ```bash
-git clone https://github.com/0xNyk/council-of-high-intelligence.git
-cd council-of-high-intelligence
+git clone https://github.com/gauryash/council-of-high-intelligence-opencode.git
+cd council-of-high-intelligence-opencode
 cp .env.example .env
 # Edit .env and set your OPENCODE_GO_API_KEY
 ./install.sh
@@ -176,7 +178,9 @@ All 18 members with domain triads above. Best for broad deliberation.
 
 ## Installation
 
-Installs 18 council agents plus the skill file for opencode-go.
+Installs 18 council agents plus the skill file for opencode-go and/or pi.
+
+### opencode-go
 
 ```bash
 ./install.sh                                   # Default install
@@ -185,11 +189,19 @@ Installs 18 council agents plus the skill file for opencode-go.
 ./install.sh --copy-configs                     # Also install model routing templates
 ```
 
-Restart opencode-go after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the demo session pack to test all modes.
+### pi
+
+```bash
+./install.sh --pi                               # Install pi skill alongside opencode-go
+./install.sh --pi --pi-dir /path/to/.pi/agent   # Custom pi directory
+./install.sh --pi --copy-configs                # Also install model routing templates
+```
+
+Run `./scripts/council-simulation-checklist.sh` to validate after installing. Try the demo session pack to test all modes.
 
 ## Requirements
 
-- [opencode-go](https://opencode.ai) CLI
+- [opencode-go](https://opencode.ai) CLI — or — [pi](https://github.com/earendil-works/pi) coding agent
 - An API key for the opencode-go endpoint (set `OPENCODE_GO_API_KEY` in `.env`)
 - Built-in: no external provider CLIs required — all dispatch happens through the opencode-go API
 
@@ -249,8 +261,6 @@ related or neighboring rights to this work.
 
 ---
 
-<p align="center">
-  <a href="https://star-history.com/#0xNyk/council-of-high-intelligence&Date">
-    <img src="https://api.star-history.com/svg?repos=0xNyk/council-of-high-intelligence&type=Date" alt="Star History" width="400">
-  </a>
-</p>
+## Star History
+
+[![Star History Chart](https://api.star-history.com/chart?repos=gauryash/council-of-high-intelligence-opencode&type=date&legend=top-left)](https://www.star-history.com/?repos=gauryash%2Fcouncil-of-high-intelligence-opencode&type=date&legend=top-left)
