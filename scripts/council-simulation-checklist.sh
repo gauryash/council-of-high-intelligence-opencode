@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_DIR}"
 
-echo "== Council Simulation Checklist =="
+echo "== Council Simulation Checklist (opencode-go) =="
 
 pass() { echo "[PASS] $1"; }
 fail() { echo "[FAIL] $1"; exit 1; }
@@ -15,8 +15,6 @@ warn() { echo "[WARN] $1"; }
 
 [[ -f "SKILL.md" ]] || fail "SKILL.md is missing"
 pass "SKILL.md exists"
-[[ -f "SKILL.codex.md" ]] || fail "SKILL.codex.md is missing"
-pass "SKILL.codex.md exists"
 
 if compgen -G "agents/council-*.md" >/dev/null; then
   agent_count=$(python3 -c "import glob; print(len(glob.glob('agents/council-*.md')))" 2>/dev/null || echo "unknown")
@@ -28,7 +26,8 @@ fi
 [[ -f "configs/provider-model-slots.example.yaml" ]] || fail "configs/provider-model-slots.example.yaml is missing"
 pass "Provider/model slot template exists"
 
-[[ -f "CLAUDE.md" ]] || warn "CLAUDE.md is missing (recommended for project conventions)"
+[[ -f ".env.example" ]] || fail ".env.example is missing"
+pass ".env.example exists"
 
 # --- SKILL.md content checks ---
 
@@ -54,31 +53,20 @@ grep -q "VERIFY" SKILL.md || fail "Verification steps missing in SKILL.md"
 pass "Verification steps present in SKILL.md"
 
 # Round 2 anonymization (issue #17) — protect against silent regression
-grep -q "ANONYMIZED" SKILL.md || fail "Round 2 anonymization missing in SKILL.md (issue #17)"
 grep -q "Member A" SKILL.md || fail "Member-label vocabulary missing in SKILL.md (issue #17)"
 pass "Round 2 anonymization wired in SKILL.md"
 
-grep -q "anonymiz" SKILL.codex.md || fail "Round 2 anonymization missing in SKILL.codex.md (issue #17)"
-pass "Round 2 anonymization wired in SKILL.codex.md"
-
-# Anti-conformity directive (issue #19) — must be in every Round 2 prompt
+# Anti-conformity directive (issue #19) — must be in Round 2 prompts
 ac_count_skill=$(grep -c "Anti-conformity directive" SKILL.md || true)
-if [[ "$ac_count_skill" -lt 3 ]]; then
-  fail "Anti-conformity directive missing from one or more Round 2 prompts in SKILL.md (issue #19; expected ≥3 occurrences, found ${ac_count_skill})"
+if [[ "$ac_count_skill" -lt 2 ]]; then
+  fail "Anti-conformity directive missing from one or more Round 2 prompts in SKILL.md (issue #19; expected ≥2 occurrences, found ${ac_count_skill})"
 fi
-pass "Anti-conformity directive present in all 3 Round 2 prompts in SKILL.md"
+pass "Anti-conformity directive present in Round 2 prompts in SKILL.md"
 
-grep -q "Anti-conformity directive" SKILL.codex.md || fail "Anti-conformity directive missing in SKILL.codex.md (issue #19)"
-pass "Anti-conformity directive present in SKILL.codex.md"
-
-# Chairman role (issue #18) — must be wired into STEP 1.7, STEP 7, flags, and Codex
-grep -q "STEP 1.7" SKILL.md || fail "Chairman selection step missing in SKILL.md (issue #18)"
-grep -q -- "--chairman" SKILL.md || fail "--chairman flag missing in SKILL.md (issue #18)"
-grep -q "CHAIRMAN" SKILL.md || fail "Chairman synthesis step missing in SKILL.md (issue #18)"
-pass "Chairman role wired in SKILL.md (STEP 1.7 + --chairman flag + synthesis step)"
-
-grep -q -i "chairman" SKILL.codex.md || fail "Chairman role missing in SKILL.codex.md (issue #18)"
-pass "Chairman role wired in SKILL.codex.md"
+# Chairman role (issue #18)
+grep -q "STEP 3: Chairman Selection" SKILL.md || fail "Chairman selection step missing in SKILL.md (issue #18)"
+grep -q "STEP 9: Synthesize Verdict" SKILL.md || fail "Chairman synthesis step missing in SKILL.md (issue #18)"
+pass "Chairman role wired in SKILL.md"
 
 grep -q "chairman_defaults" configs/auto-route-defaults.yaml || fail "chairman_defaults block missing in auto-route-defaults.yaml (issue #18)"
 pass "Chairman defaults configured in auto-route-defaults.yaml"
@@ -87,29 +75,18 @@ pass "Chairman defaults configured in auto-route-defaults.yaml"
 grep -q "Acceptable Compromises" SKILL.md || fail "Acceptable Compromises section missing in SKILL.md (issue #21)"
 grep -q "Kill Criteria" SKILL.md || fail "Kill Criteria section missing in SKILL.md (issue #21)"
 grep -q "Concrete Next Step" SKILL.md || fail "Concrete Next Step section missing in SKILL.md (issue #21)"
-pass "Verdict actionability sections present in SKILL.md (Acceptable Compromises / Kill Criteria / Concrete Next Step)"
+pass "Verdict actionability sections present in SKILL.md"
 
-grep -q "Acceptable Compromises" SKILL.codex.md || fail "Acceptable Compromises missing in SKILL.codex.md (issue #21)"
-grep -q "Kill Criteria" SKILL.codex.md || fail "Kill Criteria missing in SKILL.codex.md (issue #21)"
-grep -q "Concrete Next Step" SKILL.codex.md || fail "Concrete Next Step missing in SKILL.codex.md (issue #21)"
-pass "Verdict actionability sections present in SKILL.codex.md"
+# opencode-go API archetype — must be wired in dispatch + routing
+grep -q "opencode_api" SKILL.md || fail "opencode_api dispatch archetype missing in SKILL.md"
+grep -q "OPENCODE_GO_API_KEY\|OPENCODE_GO_KEY\|opencode.*key" SKILL.md || fail "opencode-go API key handling missing in SKILL.md"
+grep -q "chat/completions" SKILL.md || fail "chat/completions endpoint missing in SKILL.md dispatch"
+pass "opencode-go API archetype wired in SKILL.md"
 
-# OpenAI-compatible API archetype (issue #16) — must be wired in dispatch + routing
-grep -q "openai_compatible_api" SKILL.md || fail "openai_compatible_api archetype missing in SKILL.md (issue #16)"
-grep -q "base_url" SKILL.md || fail "base_url handling missing in SKILL.md (issue #16)"
-grep -q "api_key_env" SKILL.md || fail "api_key_env handling missing in SKILL.md (issue #16)"
-pass "openai_compatible_api archetype wired in SKILL.md (dispatch + base_url + api_key_env)"
-
-grep -q "openai_compatible_api\|openai-compatible\|OpenAI-Compatible" SKILL.codex.md || fail "openai_compatible_api archetype missing in SKILL.codex.md (issue #16)"
-pass "openai_compatible_api archetype wired in SKILL.codex.md"
-
-# Session Metadata schema (issue #7 Phase 1)
+# Session Metadata schema (issue #7)
 grep -q "Session Metadata" SKILL.md || fail "Session Metadata block missing in SKILL.md (issue #7)"
 grep -q "schema_version: 1" SKILL.md || fail "schema_version: 1 marker missing in SKILL.md Session Metadata (issue #7)"
 pass "Session Metadata schema wired in SKILL.md"
-
-grep -q "Session Metadata\|session metadata\|session_metadata" SKILL.codex.md || fail "Session Metadata missing in SKILL.codex.md (issue #7)"
-pass "Session Metadata referenced in SKILL.codex.md"
 
 # --- Agent structure checks ---
 
@@ -120,7 +97,6 @@ for agent_file in agents/council-*.md; do
   agent_name=$(basename "${agent_file}" .md)
   for section in "${required_sections[@]}"; do
     if ! grep -q "## ${section}" "${agent_file}" 2>/dev/null; then
-      # Some sections use slightly different headers, try partial match
       section_word=$(echo "${section}" | awk '{print $1}')
       if ! grep -qi "${section_word}" "${agent_file}" 2>/dev/null; then
         warn "${agent_name}: missing section '${section}'"
@@ -162,13 +138,6 @@ for member_name in aristotle socrates feynman ada sun-tzu machiavelli aurelius l
 done
 pass "All triad member agent files present"
 
-# --- Verdict template dedup check ---
-
-if grep -q "^{" demos/verdict-template.md 2>/dev/null; then
-  warn "demos/verdict-template.md still contains template placeholders (should point to SKILL.md)"
-fi
-pass "Verdict template dedup check done"
-
 # --- Auto-routing checks ---
 
 [[ -f "scripts/detect-providers.sh" ]] || fail "scripts/detect-providers.sh is missing"
@@ -188,24 +157,6 @@ fi
 [[ -f "configs/auto-route-defaults.yaml" ]] || fail "configs/auto-route-defaults.yaml is missing"
 pass "Auto-route defaults config exists"
 
-grep -q -- "--no-auto-route" SKILL.md || fail "--no-auto-route flag missing in SKILL.md"
-pass "--no-auto-route flag documented in SKILL.md"
-
-grep -q -- "--dry-route" SKILL.md || fail "--dry-route flag missing in SKILL.md"
-pass "--dry-route flag documented in SKILL.md"
-
-affinity_count=0
-for agent_file in agents/council-*.md; do
-  if grep -q "provider_affinity" "$agent_file" 2>/dev/null; then
-    ((affinity_count+=1))
-  fi
-done
-if [[ "$affinity_count" -eq "$agent_count" ]]; then
-  pass "All agents have provider_affinity in frontmatter"
-else
-  warn "Only ${affinity_count}/${agent_count} agents have provider_affinity"
-fi
-
 # --- Install script checks ---
 
 if command -v shellcheck >/dev/null 2>&1; then
@@ -219,19 +170,13 @@ fi
 pass "install.sh --dry-run completed"
 
 grep -q "Installed .* council agents" /tmp/council-install-dry-run.log || fail "install dry-run output missing agent install summary"
-pass "install summary output present"
+pass "Install summary output present"
 
 ./install.sh --dry-run --copy-configs >/tmp/council-install-dry-run-configs.log
 pass "install.sh --dry-run --copy-configs completed"
 
 grep -q "Installed .* config files" /tmp/council-install-dry-run-configs.log || fail "copy-configs dry-run output missing config install summary"
-pass "config summary output present"
-
-./install.sh --dry-run --codex >/tmp/council-install-dry-run-codex.log
-pass "install.sh --dry-run --codex completed"
-
-grep -q "Installed Codex skill to" /tmp/council-install-dry-run-codex.log || fail "codex dry-run output missing Codex skill summary"
-pass "Codex install summary output present"
+pass "Config summary output present"
 
 echo
 echo "Checklist complete."

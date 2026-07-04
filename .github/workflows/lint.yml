@@ -26,12 +26,13 @@ jobs:
           shellcheck install.sh
           shellcheck scripts/detect-providers.sh
           shellcheck scripts/council-simulation-checklist.sh
+          shellcheck install.sh
 
       - name: Markdownlint
         run: |
           markdownlint \
             --disable MD013 MD024 MD033 MD041 \
             README.md CONTRIBUTING.md CHANGELOG.md \
-            SKILL.md SKILL.codex.md \
+            SKILL.md \
             "agents/**/*.md" \
             "demos/**/*.md"

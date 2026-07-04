@@ -1,47 +1,51 @@
-# Example seat mapping for multi-provider / multi-model exploration.
+# Example seat mapping for opencode-go.
 # Use with: /council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml "..."
+#
+# opencode-go provides an OpenAI-compatible API at https://opencode.ai/zen/go/v1.
+# All seats route through this single provider. Model tier selection provides
+# differentiated reasoning capabilities (pro = deep analytical, flash = fast).
 
 profile: exploration-orthogonal
 strategy:
-  provider_spread_first: true
-  avoid_pair_collocation: true
+  provider_spread_first: false
+  avoid_pair_collocation: false
   force_counterfactual_if_consensus_gt: 0.70
   require_dissenting_members: 2
 
 seats:
   socrates:
-    provider: anthropic
-    model: claude-sonnet-4
+    provider: opencode_go
+    model: deepseek-v4-pro
     reasoning_mode: analytical
   feynman:
-    provider: openai
-    model: gpt-5
+    provider: opencode_go
+    model: deepseek-v4-pro
     reasoning_mode: mechanistic
   sun-tzu:
-    provider: google
-    model: gemini-2.5-pro
+    provider: opencode_go
+    model: deepseek-v4-flash
     reasoning_mode: strategic
   machiavelli:
-    provider: xai
-    model: grok-4
+    provider: opencode_go
+    model: deepseek-v4-flash
     reasoning_mode: adversarial
   ada:
-    provider: openai
-    model: o3
+    provider: opencode_go
+    model: deepseek-v4-pro
     reasoning_mode: formal
   lao-tzu:
-    provider: anthropic
-    model: claude-sonnet-4
+    provider: opencode_go
+    model: deepseek-v4-flash
     reasoning_mode: emergent
   aurelius:
-    provider: google
-    model: gemini-2.5-pro
+    provider: opencode_go
+    model: deepseek-v4-pro
     reasoning_mode: normative
   torvalds:
-    provider: openai
-    model: gpt-5-mini
+    provider: opencode_go
+    model: deepseek-v4-flash
     reasoning_mode: pragmatic
 
 fallback:
-  provider: openai
-  model: gpt-5-mini
+  provider: opencode_go
+  model: deepseek-v4-flash

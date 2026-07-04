@@ -3,12 +3,12 @@
 ## Architecture
 
 - `SKILL.md` — coordinator protocol with execution sequence, modes, and verdict templates
-- `SKILL.codex.md` — Codex-specific council coordinator protocol
 - `agents/council-*.md` — 18 member personas with YAML frontmatter
-- `install.sh` — installs to `~/.claude/` and optionally `~/.codex/skills/council/`
+- `install.sh` — installs to `~/.config/opencode/skills/council/`
 - `configs/` — provider/model routing templates
 - `demos/` — example prompts and scoring rubric
 - `scripts/` — validation checklist
+- `.env.example` — API key and model configuration template
 
 ## Conventions
 
@@ -26,7 +26,6 @@
 ### Testing
 - Always run `./scripts/council-simulation-checklist.sh` after changes
 - Always run `./install.sh --dry-run` to verify installation
-- When changing Codex installation, also run `./install.sh --dry-run --codex`
 - Test at least one mode (full/quick/duo) after protocol changes
 
 ### Style
