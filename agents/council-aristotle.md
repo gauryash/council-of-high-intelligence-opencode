@@ -1,7 +1,6 @@
 ---
 name: council-aristotle
 description: "Council member. Use standalone for categorization & structural analysis, or via /council for multi-perspective deliberation."
-model: opus
 color: amber
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:

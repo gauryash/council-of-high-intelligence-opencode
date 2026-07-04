@@ -1,7 +1,6 @@
 ---
 name: council-rams
 description: "Council member. Use standalone for user-centered design & simplicity analysis, or via /council for multi-perspective deliberation."
-model: sonnet
 color: white-smoke
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:

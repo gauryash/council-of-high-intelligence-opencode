@@ -1,7 +1,6 @@
 ---
 name: council-karpathy
 description: "Council member. Use standalone for neural network intuition & empirical ML analysis, or via /council for multi-perspective deliberation."
-model: sonnet
 color: green
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:

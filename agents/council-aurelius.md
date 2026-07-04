@@ -1,7 +1,6 @@
 ---
 name: council-aurelius
 description: "Council member. Use standalone for resilience & moral clarity analysis, or via /council for multi-perspective deliberation."
-model: opus
 color: silver
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
