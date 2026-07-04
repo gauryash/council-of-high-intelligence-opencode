@@ -1,0 +1,5 @@
+# No API keys — .env files are not needed
+# (council uses pi's own model, not external APIs)
+.env
+.env.*
+*.env

@@ -19,17 +19,18 @@
 ```bash
 git clone https://github.com/gauryash/council-of-high-intelligence-opencode.git
 cd council-of-high-intelligence-opencode
-cp .env.example .env   # edit .env → set OPENCODE_GO_API_KEY
 ./install.sh           # installs to both pi and opencode-go by default
 ```
 
-Then ask the council:
+Then ask the council in pi:
 
 ```
 /council Should we open-source our agent framework?
 /council --quick Should we add caching here?
 /council --duo Should we use microservices or monolith?
 ```
+
+**No API keys needed.** The council uses pi's own model to dispatch all 18 members as subagents.
 
 ## The 18 Council Members
 
@@ -62,18 +63,17 @@ By default `./install.sh` installs for **both** pi (`~/.pi/agent/skills/council/
 ./install.sh                          # both pi + opencode-go (default)
 ./install.sh --no-pi                  # opencode-go only
 ./install.sh --no-opencode            # pi only
-./install.sh --copy-configs           # also install model routing configs/
 ./install.sh --dry-run                # preview without changes
 ./install.sh --pi-dir PATH            # custom pi directory
 ./install.sh --opencode-dir PATH      # custom opencode directory
 ```
 
-Validate with `./scripts/council-simulation-checklist.sh`, then restart your client.
+Then restart your client and use `/council`.
 
 ## Requirements
 
-- **pi** or **opencode-go** CLI installed
-- `OPENCODE_GO_API_KEY` set in `.env`
+- **pi** CLI installed (with `pi-subagents` package)
+- No API keys required — the council uses pi's own model
 
 ## Star History
 

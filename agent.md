@@ -8,7 +8,6 @@
 - `configs/` — provider/model routing templates
 - `demos/` — example prompts and scoring rubric
 - `scripts/` — validation checklist
-- `.env.example` — API key and model configuration template
 
 ## Conventions
 
