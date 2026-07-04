@@ -7,22 +7,26 @@ OPENCODE_DIR="${HOME}/.config/opencode"
 DRY_RUN=false
 COPY_CONFIGS=false
 INSTALL_PI=true
-INSTALL_OPENCODE=false
+INSTALL_OPENCODE=true
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--pi-dir PATH] [--opencode] [--opencode-dir PATH] [--copy-configs] [--dry-run] [--help]
+Usage: ./install.sh [--no-pi] [--no-opencode] [--pi-dir PATH] [--opencode-dir PATH] [--copy-configs] [--dry-run] [--help]
 
-Install Council of High Intelligence into pi and/or opencode-go skill directories.
-Default: installs to pi only (~/.pi/agent/skills/council/).
+Install Council of High Intelligence into both pi and opencode-go skill directories.
+Default: installs to both (~/.pi/agent/skills/council/ and ~/.config/opencode/skills/council/).
 
 Options:
+  --no-pi             Skip installing for pi
+  --no-opencode        Skip installing for opencode-go
   --pi-dir PATH        Target pi agent directory (default: ~/.pi/agent)
-  --opencode           Also install for opencode-go
   --opencode-dir PATH  Target opencode config directory (default: ~/.config/opencode)
   --copy-configs       Also install repo configs/ into skill config folder
   --dry-run            Print actions without writing files
   --help               Show this help message
+
+Deprecated (kept for compatibility):
+  --opencode           No-op; opencode-go is installed by default (use --no-opencode to skip)
 EOF
 }
 
@@ -33,9 +37,13 @@ while [[ $# -gt 0 ]]; do
       PI_DIR="$2"; shift 2 ;;
     --opencode)
       INSTALL_OPENCODE=true; shift ;;
+    --no-opencode)
+      INSTALL_OPENCODE=false; shift ;;
     --opencode-dir)
       if [[ $# -lt 2 ]]; then echo "Error: --opencode-dir requires a path argument" >&2; usage; exit 1; fi
       OPENCODE_DIR="$2"; INSTALL_OPENCODE=true; shift 2 ;;
+    --no-pi)
+      INSTALL_PI=false; shift ;;
     --copy-configs)
       COPY_CONFIGS=true; shift ;;
     --dry-run)
@@ -66,6 +74,7 @@ SCRIPTS_SRC_DIR="${SCRIPT_DIR}/scripts"
 # ============================================================
 # Install for pi (default)
 # ============================================================
+
 if [[ "${INSTALL_PI}" == true ]]; then
   PI_SKILL_DIR="${PI_DIR}/skills/council"
 
@@ -92,7 +101,7 @@ if [[ "${INSTALL_PI}" == true ]]; then
 fi
 
 # ============================================================
-# Install for opencode-go (optional, --opencode)
+# Install for opencode-go (optional, --no-opencode to skip)
 # ============================================================
 if [[ "${INSTALL_OPENCODE}" == true ]]; then
   OPENCODE_SKILL_DIR="${OPENCODE_DIR}/skills/council"
@@ -120,5 +129,14 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
   echo "  .env.example installed"
 fi
 
+if [[ "$INSTALL_PI" == false ]] && [[ "$INSTALL_OPENCODE" == false ]]; then
+  echo ""
+  echo "Warning: both --no-pi and --no-opencode given — nothing to install."
+  exit 1
+fi
+
 echo ""
+echo "Targets enabled:"
+[[ "$INSTALL_PI" == true ]] && echo "  - pi:        ${PI_DIR}/skills/council/"
+[[ "$INSTALL_OPENCODE" == true ]] && echo "  - opencode:  ${OPENCODE_DIR}/skills/council/"
 echo "Done. Restart your CLI client(s) and use /council to convene the council."

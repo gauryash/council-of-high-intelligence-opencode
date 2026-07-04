@@ -4,7 +4,7 @@
 
 - `SKILL.md` — coordinator protocol with execution sequence, modes, and verdict templates
 - `agents/council-*.md` — 18 member personas with YAML frontmatter
-- `install.sh` — installs to `~/.config/opencode/skills/council/`
+- `install.sh` — installs to both `~/.pi/agent/skills/council/` (pi) and `~/.config/opencode/skills/council/` (opencode-go) by default; `--no-pi` / `--no-opencode` to skip one
 - `configs/` — provider/model routing templates
 - `demos/` — example prompts and scoring rubric
 - `scripts/` — validation checklist

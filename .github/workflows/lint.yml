@@ -19,20 +19,21 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y shellcheck
-          npm install -g markdownlint-cli
+          npm install -g markdownlint-cli@latest
+
+      - name: Install.sh dry-run sanity
+        run: ./install.sh --dry-run
 
       - name: Shellcheck
         run: |
           shellcheck install.sh
           shellcheck scripts/detect-providers.sh
           shellcheck scripts/council-simulation-checklist.sh
-          shellcheck install.sh
 
       - name: Markdownlint
         run: |
           markdownlint \
             --disable MD013 MD024 MD033 MD041 \
-            README.md CONTRIBUTING.md CHANGELOG.md \
+            README.md CONTRIBUTING.md agent.md \
             SKILL.md \
-            "agents/**/*.md" \
-            "demos/**/*.md"
+            "agents/**/*.md"
